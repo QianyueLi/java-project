@@ -3,12 +3,19 @@ properties([pipelineTriggers([githubPush()])])
 node('linux') {   
 	stage('Test') {    
 		git 'https://github.com/QianyueLi/java-project.git'
-		sh 'ant -buildfile test.xml'   
+		sh 'ant -f test.xml -v'
+	        junit 'reports/result.xml'
 	}   
 	stage('Build') {    
-		sh 'ant'   
+		sh 'ant -f build.xml -v'
 	}   
-	stage('Results') {    
-		junit 'reports/*.xml'   
+	stage('Deploy') {
+		sh 'aws s3 cp /workspace/java-pipeline/dist/rectangle-${BUILD_NUMBER}.jar s3://assignment10jenkins'
+	}
+	stage('Report') {
+		withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'ac5fb329-14b6-48d1-8fbc-aae55ad590c6', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+    // some block
+		sh 'aws cloudformation describe-stack-resources --region us-east-1 --stack-name jenkins'
+}
 	}
 }
